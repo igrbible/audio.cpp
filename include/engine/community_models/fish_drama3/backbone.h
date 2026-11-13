@@ -46,6 +46,7 @@ struct Drama3BackboneDecoderConfig {
     int64_t kv_cache_alignment = 1;
     int64_t decode_cache_steps = 2048;
     int64_t cpu_expert_layers = 0;
+    int64_t cpu_expert_first = 0;   // Ruach probe 09.11.2026: the first layer whose expert banks go to RAM (0 = the lowest, as upstream)
     bool disk_experts = false;
     bool pin_experts = false;
     int64_t expert_cache_size = 32;

@@ -131,6 +131,7 @@ Drama3Generator::Drama3Generator(std::shared_ptr<const Drama3Assets> assets,
     debug::trace_log_scalar("fish_drama3.kv_cache_type", std::string_view(backbone_config.kv_cache_type == GGML_TYPE_F16 ? "f16" : "f32"));
     debug::trace_log_scalar("fish_drama3.kv_cache_alignment", backbone_config.kv_cache_alignment);
     backbone_config.cpu_expert_layers = runtime::parse_i64_option(options.options, {"fish_drama3.cpu_expert_layers"}).value_or(4);
+    backbone_config.cpu_expert_first = runtime::parse_i64_option(options.options, {"fish_drama3.cpu_expert_first"}).value_or(0);
     if (const auto value = runtime::find_option(options.options, {"fish_drama3.disk_experts"}))
         backbone_config.disk_experts = runtime::parse_bool_option(*value, "fish_drama3.disk_experts");
     if (const auto value = runtime::find_option(options.options, {"fish_drama3.pin_experts"}))

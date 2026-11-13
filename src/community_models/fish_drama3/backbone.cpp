@@ -301,6 +301,9 @@ std::shared_ptr<Drama3BackboneWeights> load_qwen35_weights(
     if (c.cpu_expert_layers < 0 || c.cpu_expert_layers > c.layers) {
         throw std::runtime_error("Drama 3 cpu_expert_layers must be between zero and the layer count");
     }
+    if (c.cpu_expert_first < 0 || c.cpu_expert_first + c.cpu_expert_layers > c.layers) {
+        throw std::runtime_error("Drama 3 cpu_expert_first + cpu_expert_layers must stay within the layer count");
+    }
     if ((c.cpu_expert_layers > 0 || c.disk_experts) && execution.backend_type() != core::BackendType::Cpu) {
         core::BackendConfig host;
         host.threads = execution.config().threads;
@@ -348,7 +351,7 @@ std::shared_ptr<Drama3BackboneWeights> load_qwen35_weights(
         out.shared_gate = weights->store->load_tensor(source, prefix + ".mlp.shared_expert_gate.weight", storage_type, {1, c.hidden_size});
         if (weights->disk_store) {
             out.disk_store = weights->disk_store.get();
-            const auto backend = weights->cpu_execution && layer < c.cpu_expert_layers
+            const auto backend = weights->cpu_execution && layer >= c.cpu_expert_first && layer < c.cpu_expert_first + c.cpu_expert_layers
                 ? weights->cpu_execution->backend() : execution.backend();
             const auto bank = "model_weights/" + prefix + ".mlp.experts.";
             out.disk_group = out.disk_store->add_group({bank + "gate_proj.weight", bank + "up_proj.weight",
@@ -357,7 +360,7 @@ std::shared_ptr<Drama3BackboneWeights> load_qwen35_weights(
             out.expert_up = out.disk_store->tensor(out.disk_group, 1);
             out.expert_down = out.disk_store->tensor(out.disk_group, 2);
         } else {
-            auto & expert_store = weights->cpu_store && layer < c.cpu_expert_layers ? *weights->cpu_store : *weights->store;
+            auto & expert_store = weights->cpu_store && layer >= c.cpu_expert_first && layer < c.cpu_expert_first + c.cpu_expert_layers ? *weights->cpu_store : *weights->store;
             out.expert_gate = expert_store.load_tensor(source, prefix + ".mlp.experts.gate_proj.weight", storage_type, {layer_experts, c.intermediate_size, c.hidden_size});
             out.expert_up = expert_store.load_tensor(source, prefix + ".mlp.experts.up_proj.weight", storage_type, {layer_experts, c.intermediate_size, c.hidden_size});
             out.expert_down = expert_store.load_tensor(source, prefix + ".mlp.experts.down_proj.weight", storage_type, {layer_experts, c.hidden_size, c.intermediate_size});
